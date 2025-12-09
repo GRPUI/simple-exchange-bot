@@ -41,5 +41,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    logger.add("logs.log", level="INFO", rotation="1 week")
     asyncio.run(main())

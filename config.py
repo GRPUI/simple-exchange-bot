@@ -14,3 +14,4 @@ DB_HOST = os.getenv("POSTGRES_HOST")
 DB_PORT = os.getenv("POSTGRES_PORT")
 DB_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 LEAD_CHAT = os.getenv("LEAD_CHAT")
+ADMIN_URL = os.getenv("ADMIN_URL")

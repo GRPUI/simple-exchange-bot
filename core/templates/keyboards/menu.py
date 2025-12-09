@@ -1,5 +1,6 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
+from config import ADMIN_URL
 from core.db.database_handler import DatabaseHandler
 from core.services.texts import get_texts
 
@@ -57,7 +58,7 @@ async def get_main_menu_keyboard(
             [
                 InlineKeyboardButton(
                     text=texts.get("admin_button", "🛠️ Admin Panel"),
-                    callback_data="admin_button",
+                    web_app=WebAppInfo(url=ADMIN_URL),
                 ),
             ],
         )

@@ -5,6 +5,7 @@ from aiogram.types import Message
 
 from core.db.database_handler import DatabaseHandler
 from core.services.texts import get_texts
+from core.templates.keyboards.admin import get_admin_panel_keyboard
 from core.templates.keyboards.menu import (
     get_main_menu_keyboard,
 )
@@ -54,4 +55,17 @@ async def start_command_handler(
 async def admin_command_handler(
     message: Message, db: DatabaseHandler, state: FSMContext
 ):
-    pass
+    user = await db.get_user(message.from_user.id)
+    texts = await get_texts(
+        unique_names=["admin_panel"],
+        language_code=user.language or "en",
+        db=db,
+    )
+    if not user.is_admin:
+        return
+
+    await state.clear()
+    await message.answer(
+        texts["admin_panel"],
+        reply_markup=await get_admin_panel_keyboard(user.language or "en", db),
+    )

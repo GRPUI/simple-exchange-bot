@@ -21,3 +21,9 @@ class CreateOrderState(StatesGroup):
             "receiver": CreateOrderState.waiting_for_receiver,
         }
         return state_mapping.get(field)
+
+
+class CreatePaymentOrderState(StatesGroup):
+    waiting_for_category = State()
+    waiting_for_amount_with_currency = State()
+    waiting_for_link = State()

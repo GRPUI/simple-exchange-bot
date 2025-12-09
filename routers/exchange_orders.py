@@ -192,12 +192,16 @@ async def submit_order_handler(
     user = await db.get_user(callback_query.from_user.id)
     texts = await get_texts(["order_sent"], user.language or "ru", db=db)
 
-    text = "НОВАЯ ЗАЯВКА\n\n" + data["order_text"].split("\n\n")[1]
+    text = (
+        f"НОВАЯ ЗАЯВКА от <a href='tg://user?id={callback_query.from_user.id}'>{callback_query.from_user.first_name or 'Клиент'}</a>\n\n"
+        + data["order_text"].split("\n\n")[1]
+    )
 
     await callback_query.message.edit_text(texts["order_sent"])
     await callback_query.bot.send_message(
         LEAD_CHAT,
         text=text,
+        parse_mode="HTML",
     )
 
 

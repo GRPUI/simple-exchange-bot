@@ -15,6 +15,7 @@ from core.db.tables import (
     TextItem,
     AppConfig,
     Currency,
+    PaymentCategory,
 )
 from core.templates.texts import predefined_texts
 
@@ -36,6 +37,7 @@ class DatabaseHandler:
             await conn.run_sync(Base.metadata.create_all)
         await self._create_predefined_texts()
         await self._create_predefined_currencies()
+        await self._create_predefined_payment_categories()
 
     async def _create_predefined_texts(self) -> None:
         """Создает в базе данных предопределенные тексты, если их нет"""
@@ -80,6 +82,41 @@ class DatabaseHandler:
                             is_active=True,
                         )
                     )
+            await session.commit()
+
+    async def _create_predefined_payment_categories(self) -> None:
+        """Создает в базе данных предопределенные категории плтежей, если их нет"""
+        async with self.sessionmaker() as session:
+            categories = {
+                "goods": {
+                    "en": "Goods",
+                    "ru": "Товары",
+                },
+                "digital_goods": {
+                    "en": "Digital Goods",
+                    "ru": "Цифровые товары",
+                },
+                "bookings": {
+                    "en": "Bookings",
+                    "ru": "Бронирование",
+                },
+            }
+            for unique_name, translations in categories.items():
+                for lang_code, content in translations.items():
+                    existing = await session.scalar(
+                        select(PaymentCategory).where(
+                            PaymentCategory.unique_name == unique_name,
+                            PaymentCategory.language == lang_code,
+                        )
+                    )
+                    if not existing:
+                        session.add(
+                            PaymentCategory(
+                                unique_name=unique_name,
+                                language=lang_code,
+                                name=content,
+                            )
+                        )
             await session.commit()
 
     async def close(self) -> None:
@@ -275,5 +312,28 @@ class DatabaseHandler:
         async with self.sessionmaker() as session:
             result = await session.execute(
                 select(Currency).where(Currency.symbol == symbol)
+            )
+            return result.scalar_one_or_none()
+
+    # ==================== PAYMENT CATEGORY OPERATIONS ====================
+
+    async def get_payment_categories(
+        self, lang_code: str = "ru"
+    ) -> List[PaymentCategory]:
+        async with self.sessionmaker() as session:
+            result = await session.execute(
+                select(PaymentCategory).where(PaymentCategory.language == lang_code)
+            )
+            return result.scalars().all()
+
+    async def get_payment_category_by_unique_name(
+        self, unique_name: str, lang_code: str = "ru"
+    ) -> Optional[PaymentCategory]:
+        async with self.sessionmaker() as session:
+            result = await session.execute(
+                select(PaymentCategory).where(
+                    PaymentCategory.unique_name == unique_name,
+                    PaymentCategory.language == lang_code,
+                )
             )
             return result.scalar_one_or_none()

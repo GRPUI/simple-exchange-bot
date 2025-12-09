@@ -12,6 +12,7 @@ async def get_main_menu_keyboard(
     texts = await get_texts(
         unique_names=[
             "exchange_button",
+            "payment_order_button",
             "rate_button",
             "about_button",
             "settings_button",
@@ -27,6 +28,12 @@ async def get_main_menu_keyboard(
                 text=texts.get("exchange_button", "📚 Exchange"),
                 callback_data="exchange_button",
             ),
+        ],
+        [
+            InlineKeyboardButton(
+                text=texts.get("payment_order_button", "🛒 Payment Orders"),
+                callback_data="payment_order_button",
+            )
         ],
         [
             InlineKeyboardButton(

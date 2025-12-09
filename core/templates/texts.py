@@ -93,4 +93,28 @@ predefined_texts = {
         "en": "About Us",
         "ru": "О нас",
     },
+    "payment_order_button": {
+        "en": "🛒 Payment Orders",
+        "ru": "🛒 Платежные заказы",
+    },
+    "payment_order_template": {
+        "en": "Payment Order:\n\n- Amount with currency: {amount_with_currency}\n- Category: {category}\n- Link: {link}\n\nMake sure you have filled correctly all fields before submitting the order.",
+        "ru": "Платежный заказ:\n\n- Сумма с валютой: {amount_with_currency}\n- Категория: {category}\n- Ссылка: {link}\n\nПожалуйста, убедитесь, что все поля заполнены правильно перед отправкой платежного заказа.",
+    },
+    "choose_payment_category": {
+        "en": "Choose payment category:",
+        "ru": "Выберите категорию платежей:",
+    },
+    "choose_payment_amount": {
+        "en": "Enter payment amount with currency:",
+        "ru": "Введите сумму платежа с валютой:",
+    },
+    "send_link": {
+        "en": "Send link to the payment target:",
+        "ru": "Отправьте ссылку на цель платежа:",
+    },
+    "payment_order_sent": {
+        "en": "Payment order sent successfully!",
+        "ru": "Платежный заказ успешно отправлен!",
+    },
 }

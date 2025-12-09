@@ -108,3 +108,17 @@ class Currency(Base):
     )
     rate: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+
+class PaymentCategory(Base):
+    __tablename__ = "payment_categories"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    unique_name: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=False)
+    language: Mapped[str] = mapped_column(
+        String(10), nullable=False, default="ru", index=True
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

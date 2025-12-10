@@ -8,6 +8,7 @@ from core.services.texts import get_texts
 from core.templates.keyboards.admin import get_admin_panel_keyboard
 from core.templates.keyboards.menu import (
     get_main_menu_keyboard,
+    get_terms_of_service_keyboard,
 )
 
 router = Router()
@@ -38,10 +39,17 @@ async def start_command_handler(
     )
 
     texts = await get_texts(
-        unique_names=["greetings"],
+        unique_names=["greetings", "must_agree_with_terms"],
         language_code=user.language or "en",
         db=db,
     )
+
+    if not user.is_agreed_with_terms:
+        await message.answer(
+            texts["must_agree_with_terms"],
+            reply_markup=await get_terms_of_service_keyboard(user.language or "en", db),
+        )
+        return
 
     await message.answer(
         texts["greetings"],

@@ -86,8 +86,12 @@ predefined_texts = {
         "ru": "Заявка успешно отправлена!",
     },
     "rate_template": {
-        "en": "Current exchange rate:",
-        "ru": "Текущий курс обмена:",
+        "en": "Current exchange rates:",
+        "ru": "Текущие курсы обмена:",
+    },
+    "no_currency_pairs": {
+        "en": "No currency pairs available.",
+        "ru": "Нет доступных пар валют.",
     },
     "about_us_text": {
         "en": "About Us",
@@ -116,5 +120,21 @@ predefined_texts = {
     "payment_order_sent": {
         "en": "Payment order sent successfully!",
         "ru": "Платежный заказ успешно отправлен!",
+    },
+    "terms_of_service_button": {
+        "en": "📝 Terms of Service",
+        "ru": "📝 Пользовательское соглашение",
+    },
+    "terms_of_service_link": {
+        "en": "https://simple-exchange-bot.masagutovalmaz.space/terms-of-service",
+        "ru": "https://simple-exchange-bot.masagutovalmaz.space/terms-of-service",
+    },
+    "agree_button": {
+        "en": "✅ Agree",
+        "ru": "✅ Соглашаюсь",
+    },
+    "must_agree_with_terms": {
+        "en": "You must agree with the terms of service to use the bot.",
+        "ru": "Вы должны согласиться с пользовательским соглашением для использования бота.",
     },
 }

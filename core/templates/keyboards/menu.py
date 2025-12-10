@@ -110,3 +110,37 @@ async def get_settings_keyboard(
         ]
     )
     return keyboard
+
+
+async def get_terms_of_service_keyboard(
+    language_code: str, db: DatabaseHandler
+) -> InlineKeyboardMarkup:
+    texts = await get_texts(
+        unique_names=[
+            "terms_of_service_button",
+            "terms_of_service_link",
+            "agree_button",
+        ],
+        language_code=language_code,
+        db=db,
+    )
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=texts.get("terms_of_service_button", "📝 Terms of Service"),
+                    web_app=WebAppInfo(
+                        url=texts.get("terms_of_service_link", "📝 Terms of Service")
+                    ),
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=texts.get("agree_button", "✅ Agree"),
+                    callback_data="agree_button",
+                )
+            ],
+        ]
+    )
+    return keyboard

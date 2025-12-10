@@ -1,4 +1,5 @@
 import asyncio
+from decimal import Decimal
 
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
@@ -43,15 +44,24 @@ async def main_menu_handler(
 async def exchange_button_handler(
     callback_query: CallbackQuery, state: FSMContext, db: DatabaseHandler
 ) -> None:
-    currencies = await db.get_currencies()
     user = await db.get_user(callback_query.from_user.id)
     texts = await get_texts(
-        unique_names=["rate_template"], language_code=user.language or "ru", db=db
+        unique_names=["rate_template", "no_currency_pairs"],
+        language_code=user.language or "ru",
+        db=db,
     )
 
-    text = texts.get("rate_template", "Current exchange rate:")
-    for currency in currencies:
-        text += f"\n- {currency.name}: {currency.rate}"
+    currency_pairs = await db.get_currency_pairs()
+
+    if not currency_pairs:
+        text = texts["no_currency_pairs"]
+    else:
+        text = texts.get("rate_template", "Current exchange rates:")
+        for pair in currency_pairs:
+            from_name = pair.from_currency.name
+            to_name = pair.to_currency.name
+            rate = pair.rate.quantize(Decimal("0.001"))
+            text += f"\n- {from_name} → {to_name}: {rate}"
 
     await callback_query.message.edit_text(
         text=text,
@@ -102,3 +112,11 @@ async def change_language_handler(
         texts["settings_text"],
         reply_markup=await get_settings_keyboard(user.language or "en", db),
     )
+
+
+@router.callback_query(F.data == "agree_button")
+async def agree_terms_handler(
+    callback_query: CallbackQuery, state: FSMContext, db: DatabaseHandler
+) -> None:
+    await db.update_user(callback_query.from_user.id, is_agreed_with_terms=True)
+    await main_menu_handler(callback_query, state, db)

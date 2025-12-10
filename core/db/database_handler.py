@@ -15,6 +15,7 @@ from core.db.tables import (
     TextItem,
     AppConfig,
     Currency,
+    CurrencyPair,
     PaymentCategory,
 )
 from core.templates.texts import predefined_texts
@@ -37,6 +38,7 @@ class DatabaseHandler:
             await conn.run_sync(Base.metadata.create_all)
         await self._create_predefined_texts()
         await self._create_predefined_currencies()
+        await self._create_all_currency_pairs()
         await self._create_predefined_payment_categories()
 
     async def _create_predefined_texts(self) -> None:
@@ -82,6 +84,51 @@ class DatabaseHandler:
                             is_active=True,
                         )
                     )
+            await session.commit()
+
+    async def _create_all_currency_pairs(self) -> None:
+        """Создает все возможные пары валют между собой с is_active=False"""
+        async with self.sessionmaker() as session:
+            # Get all active currencies
+            currencies = await session.execute(
+                select(Currency).where(Currency.is_active == True)
+            )
+            currencies = currencies.scalars().all()
+
+            if len(currencies) < 2:
+                return  # Need at least 2 currencies to create pairs
+
+            # Create all possible pairs (including reverse)
+            for i, from_currency in enumerate(currencies):
+                for j, to_currency in enumerate(currencies):
+                    if i != j:  # Don't create pair with same currency
+                        # Check if pair already exists
+                        existing = await session.scalar(
+                            select(CurrencyPair).where(
+                                CurrencyPair.from_currency_id == from_currency.id,
+                                CurrencyPair.to_currency_id == to_currency.id,
+                            )
+                        )
+
+                        if not existing:
+                            # Calculate rate (for now use base rates)
+                            # In real application, this would come from external API
+                            from_rate = from_currency.rate
+                            to_rate = to_currency.rate
+                            if from_rate and to_rate and to_rate != 0:
+                                rate = from_rate / to_rate
+                            else:
+                                rate = Decimal("1.0")  # Default rate
+
+                            session.add(
+                                CurrencyPair(
+                                    from_currency_id=from_currency.id,
+                                    to_currency_id=to_currency.id,
+                                    rate=rate,
+                                    is_active=False,  # Initially inactive
+                                )
+                            )
+
             await session.commit()
 
     async def _create_predefined_payment_categories(self) -> None:
@@ -314,6 +361,152 @@ class DatabaseHandler:
                 select(Currency).where(Currency.symbol == symbol)
             )
             return result.scalar_one_or_none()
+
+    # ==================== CURRENCY PAIR OPERATIONS ====================
+    async def get_currency_pairs(self) -> List[CurrencyPair]:
+        """Get all active currency pairs with pre-loaded relationships"""
+        async with self.sessionmaker() as session:
+            from sqlalchemy.orm import joinedload
+
+            result = await session.execute(
+                select(CurrencyPair)
+                .options(
+                    joinedload(CurrencyPair.from_currency),
+                    joinedload(CurrencyPair.to_currency),
+                )
+                .where(CurrencyPair.is_active == True)
+            )
+            return result.scalars().all()
+
+    async def get_currency_pair(
+        self, from_currency_symbol: str, to_currency_symbol: str
+    ) -> Optional[CurrencyPair]:
+        """Get specific currency pair by currency symbols"""
+        async with self.sessionmaker() as session:
+            result = await session.execute(
+                select(CurrencyPair)
+                .join(CurrencyPair.from_currency)
+                .join(CurrencyPair.to_currency)
+                .where(
+                    Currency.symbol == from_currency_symbol,
+                    Currency.symbol == to_currency_symbol,
+                    CurrencyPair.is_active == True,
+                )
+            )
+            return result.scalar_one_or_none()
+
+    async def create_currency_pair(
+        self, from_currency_symbol: str, to_currency_symbol: str, rate: Decimal
+    ) -> Optional[CurrencyPair]:
+        """Create a new currency pair"""
+        async with self.sessionmaker() as session:
+            async with session.begin():
+                # Get currency IDs
+                from_currency = await session.scalar(
+                    select(Currency).where(Currency.symbol == from_currency_symbol)
+                )
+                to_currency = await session.scalar(
+                    select(Currency).where(Currency.symbol == to_currency_symbol)
+                )
+
+                if not from_currency or not to_currency:
+                    return None
+
+                # Check if pair already exists
+                existing = await session.scalar(
+                    select(CurrencyPair).where(
+                        CurrencyPair.from_currency_id == from_currency.id,
+                        CurrencyPair.to_currency_id == to_currency.id,
+                    )
+                )
+
+                if existing:
+                    return None
+
+                # Create new pair
+                pair = CurrencyPair(
+                    from_currency_id=from_currency.id,
+                    to_currency_id=to_currency.id,
+                    rate=rate,
+                )
+                session.add(pair)
+                await session.commit()
+                await session.refresh(pair)
+                return pair
+
+    async def update_currency_pair_rate(
+        self, from_currency_symbol: str, to_currency_symbol: str, rate: Decimal
+    ) -> bool:
+        """Update currency pair rate"""
+        async with self.sessionmaker() as session:
+            async with session.begin():
+                result = await session.execute(
+                    select(CurrencyPair)
+                    .join(CurrencyPair.from_currency)
+                    .join(CurrencyPair.to_currency)
+                    .where(
+                        Currency.symbol == from_currency_symbol,
+                        Currency.symbol == to_currency_symbol,
+                    )
+                )
+                pair = result.scalar_one_or_none()
+
+                if pair:
+                    pair.rate = rate
+                    await session.commit()
+                    return True
+                return False
+
+    async def create_default_currency_pairs(self) -> None:
+        """Create default currency pairs for KZT and RUB"""
+        async with self.sessionmaker() as session:
+            async with session.begin():
+                # Get currencies
+                kzt = await session.scalar(
+                    select(Currency).where(Currency.symbol == "kzt")
+                )
+                rub = await session.scalar(
+                    select(Currency).where(Currency.symbol == "rub")
+                )
+
+                if kzt and rub:
+                    # Create KZT to RUB pair
+                    existing_kzt_rub = await session.scalar(
+                        select(CurrencyPair).where(
+                            CurrencyPair.from_currency_id == kzt.id,
+                            CurrencyPair.to_currency_id == rub.id,
+                        )
+                    )
+                    if not existing_kzt_rub:
+                        session.add(
+                            CurrencyPair(
+                                from_currency_id=kzt.id,
+                                to_currency_id=rub.id,
+                                rate=Decimal(
+                                    "0.240"
+                                ),  # Example rate: 1 KZT = 0.240 RUB
+                            )
+                        )
+
+                    # Create RUB to KZT pair
+                    existing_rub_kzt = await session.scalar(
+                        select(CurrencyPair).where(
+                            CurrencyPair.from_currency_id == rub.id,
+                            CurrencyPair.to_currency_id == kzt.id,
+                        )
+                    )
+                    if not existing_rub_kzt:
+                        session.add(
+                            CurrencyPair(
+                                from_currency_id=rub.id,
+                                to_currency_id=kzt.id,
+                                rate=Decimal(
+                                    "4.167"
+                                ),  # Example rate: 1 RUB = 4.167 KZT
+                            )
+                        )
+
+                await session.commit()
 
     # ==================== PAYMENT CATEGORY OPERATIONS ====================
 

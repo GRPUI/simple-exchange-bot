@@ -12,8 +12,9 @@ from sqlalchemy import (
     String,
     Text,
     func,
+    ForeignKey,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
@@ -94,6 +95,9 @@ class User(Base):
     )
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_agreed_with_terms: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
 
 
 class Currency(Base):
@@ -108,6 +112,43 @@ class Currency(Base):
     )
     rate: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+
+class CurrencyPair(Base):
+    __tablename__ = "currency_pairs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    from_currency_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("currencies.id"), nullable=False, index=True
+    )
+    to_currency_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("currencies.id"), nullable=False, index=True
+    )
+    rate: Mapped[Decimal] = mapped_column(Numeric(10, 6), nullable=False, default=1.0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        Index(
+            "idx_currency_pairs_from_to",
+            "from_currency_id",
+            "to_currency_id",
+            unique=True,
+        ),
+    )
+
+    # Relationships
+    from_currency: Mapped["Currency"] = relationship(
+        "Currency", foreign_keys=[from_currency_id]
+    )
+    to_currency: Mapped["Currency"] = relationship(
+        "Currency", foreign_keys=[to_currency_id]
+    )
 
 
 class PaymentCategory(Base):

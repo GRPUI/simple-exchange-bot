@@ -45,7 +45,7 @@ async def exchange_order_handler(
         db.get_user(message.from_user.id), get_currencies_keyboard(db)
     )
     texts = await get_texts(
-        unique_names=["incorrect_amount", "choose_currency_to_exchange"],
+        unique_names=["incorrect_amount", "choose_currency_from_exchange"],
         language_code=user.language or "ru",
         db=db,
     )
@@ -60,21 +60,41 @@ async def exchange_order_handler(
             message_id=data["order_message"],
         )
         return
-    await state.set_state(CreateOrderState.waiting_for_currency)
+    await state.set_state(CreateOrderState.waiting_for_currency_from)
     await message.bot.edit_message_text(
-        texts["choose_currency_to_exchange"],
+        texts["choose_currency_from_exchange"],
         chat_id=message.chat.id,
         message_id=data["order_message"],
         reply_markup=await get_currencies_keyboard(db),
     )
 
 
-@router.callback_query(StateFilter(CreateOrderState.waiting_for_currency))
+@router.callback_query(StateFilter(CreateOrderState.waiting_for_currency_from))
 async def exchange_currency_handler(
     callback_query: CallbackQuery, state: FSMContext, db: DatabaseHandler
 ) -> None:
     currency_symbol = callback_query.data.split("_")[1]
-    await state.update_data(currency_symbol=currency_symbol)
+    await state.set_state(CreateOrderState.waiting_for_currency_to)
+    user = await db.get_user(callback_query.from_user.id)
+    texts = await get_texts(
+        unique_names=["choose_currency_to_exchange"],
+        language_code=user.language or "ru",
+        db=db,
+    )
+    await state.update_data(currency_from_symbol=currency_symbol)
+    await callback_query.message.edit_text(
+        texts["choose_currency_to_exchange"],
+        reply_markup=await get_currencies_keyboard(
+            db, exclude_currencies=[currency_symbol]
+        ),
+    )
+
+
+@router.callback_query(StateFilter(CreateOrderState.waiting_for_currency_to))
+async def exchange_currency_handler(
+    callback_query: CallbackQuery, state: FSMContext, db: DatabaseHandler
+) -> None:
+    currency_symbol = callback_query.data.split("_")[1]
     await state.set_state(CreateOrderState.waiting_for_account_number)
     user = await db.get_user(callback_query.from_user.id)
     texts = await get_texts(
@@ -82,7 +102,7 @@ async def exchange_currency_handler(
         language_code=user.language or "ru",
         db=db,
     )
-    await state.update_data(currency_symbol=currency_symbol)
+    await state.update_data(currency_to_symbol=currency_symbol)
     await callback_query.message.edit_text(texts["enter_account_number"])
 
 
@@ -159,9 +179,10 @@ async def exchange_receiver_handler(
 ) -> None:
     await safe_delete_messages(message.bot, message.chat.id, [message.message_id])
     data = await state.get_data()
-    user, currency = await asyncio.gather(
+    user, currency_from, currency_to = await asyncio.gather(
         db.get_user(message.from_user.id),
-        db.get_currency_by_symbol(data["currency_symbol"]),
+        db.get_currency_by_symbol(data["currency_from_symbol"]),
+        db.get_currency_by_symbol(data["currency_to_symbol"]),
     )
     texts = await get_texts(
         ["order_application_template"], user.language or "ru", db=db
@@ -169,7 +190,8 @@ async def exchange_receiver_handler(
     await state.update_data(receiver=message.text)
     text = texts["order_application_template"].format(
         amount=data["amount"],
-        currency_name=currency.name,
+        currency_from_name=currency_from.name,
+        currency_to_name=currency_to.name,
         account_number=data["account_number"],
         bank=data["bank"],
         receiver=message.text,
@@ -197,7 +219,8 @@ async def submit_order_handler(
         + data["order_text"].split("\n\n")[1]
     )
 
-    await callback_query.message.edit_text(texts["order_sent"])
+    await callback_query.message.edit_reply_markup(reply_markup=None)
+    await callback_query.message.answer(texts["order_sent"])
     await callback_query.bot.send_message(
         LEAD_CHAT,
         text=text,

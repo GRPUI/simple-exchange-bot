@@ -7,7 +7,7 @@ from loguru import logger
 from config import BOT_TOKEN, DB_URL
 from core.db.database_handler import DatabaseHandler
 from core.middlewares.throttling import ThrottlingMiddleware
-from routers import commands, admin, exchange_orders, menus, payment_orders
+from routers import commands, exchange_orders, menus, payment_orders
 
 
 async def main() -> None:
@@ -23,7 +23,6 @@ async def main() -> None:
     dp["db"] = db
     dp.include_routers(
         commands.router,
-        admin.router,
         exchange_orders.router,
         menus.router,
         payment_orders.router,

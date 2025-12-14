@@ -1,4 +1,5 @@
 from itertools import zip_longest
+from typing import List
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -6,8 +7,14 @@ from core.db.database_handler import DatabaseHandler
 from core.services.texts import get_texts
 
 
-async def get_currencies_keyboard(db: DatabaseHandler) -> InlineKeyboardMarkup:
+async def get_currencies_keyboard(
+    db: DatabaseHandler, exclude_currencies: List[str] = None
+) -> InlineKeyboardMarkup:
     currencies = await db.get_currencies()
+    exclude_currencies = exclude_currencies or []
+    currencies = [
+        currency for currency in currencies if currency.symbol not in exclude_currencies
+    ]
     keyboard_list = []
 
     buttons = [

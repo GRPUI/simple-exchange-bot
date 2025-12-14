@@ -45,9 +45,13 @@ predefined_texts = {
         "en": "Enter the amount you want to exchange.",
         "ru": "Введите сумму, которую вы хотите обменять.",
     },
-    "choose_currency_to_exchange": {
-        "en": "Choose the currency you want to exchange.",
+    "choose_currency_from_exchange": {
+        "en": "Choose the currency you want to exchange from.",
         "ru": "Выберите валюту, которую вы хотите обменять.",
+    },
+    "choose_currency_to_exchange": {
+        "en": "Choose the currency you want to get.",
+        "ru": "Выберите валюту, которую вы хотите получить.",
     },
     "enter_account_number": {
         "en": "Enter card or phone number of receiver.",
@@ -70,8 +74,8 @@ predefined_texts = {
         "ru": "Неверный номер счета. Пожалуйста, введите корректный номер телефона или банковской карты.",
     },
     "order_application_template": {
-        "en": "Order Application:\n\n- Amount: {amount}\n- Currency: {currency_name}\n- Account Number: {account_number}\n- Bank: {bank}\n- Receiver: {receiver}\n\nMake sure you have filled correctly all fields before submitting the order.",
-        "ru": "Заявка на обмен:\n\n- Сумма: {amount}\n- Валюта: {currency_name}\n- Номер счета: {account_number}\n- Банк: {bank}\n- Получатель: {receiver}\n\nПожалуйста, убедитесь, что все поля заполнены правильно перед отправкой заявки на обмен.",
+        "en": "Order Application:\n\n- Amount: {amount}\n- Currency from: {currency_from_name}\n- Currency to: {currency_to_name}\n- Account Number: {account_number}\n- Bank: {bank}\n- Receiver: {receiver}\n\nMake sure you have filled correctly all fields before submitting the order.",
+        "ru": "Заявка на обмен:\n\n- Сумма: {amount}\n- Валюта обмена: {currency_from_name}\n- Валюта к получению: {currency_to_name}\n- Номер счета: {account_number}\n- Банк: {bank}\n- Получатель: {receiver}\n\nПожалуйста, убедитесь, что все поля заполнены правильно перед отправкой заявки на обмен.",
     },
     "submit_button": {
         "en": "Submit",
